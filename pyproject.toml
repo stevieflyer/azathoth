@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "azathoth"
+version = "0.1.0"
+description = "The development kit that gives birth to most of the Autom itself."
+authors = ["autom_admin"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+# autom = { git = "git@github.com:NaturaFlex/autom.git", branch = "main" }
+autom = { path = "/home/steve/workspace/autom" }
+
+[tool.autom]
+qualifier = "azathoth"
+name = "Azathoth"
+owner_qualifier = "autom_admin"
+owner_email = "admin@autom.com"
+description = "The development kit that gives birth to most of the Autom itself."
+python_version = "3.11"
+python_version_spec = "^3.11"
+publicity = "public"
+github_repo_url = "https://github.com/stevieflyer/azathoth.git"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
