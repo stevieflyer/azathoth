@@ -1,4 +1,3 @@
-
 from pathlib import Path
 from autom.engine import Request
 from autom.logger import autom_logger
@@ -20,8 +19,9 @@ resp = backend_schema_converter.on_serve(
             autom_root_path=Path('/home/steve/workspace/autom'),
             autom_backend_root_path=Path('/home/steve/workspace/autom-backend'),
             autom_frontend_root_path=Path('/home/steve/workspace/autom-frontend'),
-            max_lines_per_segment=128,
+            max_lines_per_segment=512,
         )
     )
 )
 print(resp.model_dump_json(indent=4))
+resp.body.dump_to_disk()

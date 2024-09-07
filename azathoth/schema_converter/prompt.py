@@ -58,13 +58,8 @@ class User(UserSafe):
     hashed_password: str = Field(..., description="Hashed password of the user")
 
 【【输出】】
-import {{ ProjectGitStatus, ProjectPublicity, RegistryPublicity, ProjectRunnableStatus }} from "./enum";
-import {{
-  IntegrationAuthSecretMeta,
-  IntegrationAuthStatusLiteral,
-  SecretStatusLiteral,
-  WorkerIntegrationAuthorizationLiteral,
-}} from "./integration_metas";
+import {{ ProjectPublicity, ProjectRunnableStatus, ProjectGitStatus, IntegrationAuthSecretMeta }} from "./autom_entities";
+import {{ RegistryPublicity, IntegrationAuthStatusLiteral, SecretStatusLiteral, WorkerIntegrationAuthorizationLiteral }} from "./enum";
 
 // User
 export type UserBase = {{
@@ -135,7 +130,6 @@ app/schemas/enum.py
 from enum import IntEnum
 from typing import Literal
 
-# TODO: maybe organization private and more types in the future
 class RegistryPublicity(IntEnum):
     private = 0
     public = 1
@@ -156,15 +150,18 @@ export type IntegrationAuthStatusLiteral = "none" | "authorized" | "expired" | "
 我再次重申你的工作职责：请你协助我将我的后端项目(基于 Python)中的 pydantic schema, enum, literal  等数据类型转换为前端项目(基于 TypeScript)中的 TypeScript type。
 
 你应该从例子中已经知道了一些我要你完成这项工作的特别注意事项：
+
 - 对于 Optional 的字段, 请总是使用 ? 语法将其标注为可选字段。（不允许使用 | undefined 这种含糊不清的写法）
+- 请使用 typescript 中的 built-in type, 例如: string, number, Record, etc...对于 pydantic 中的各种 field, 例如： PositiveInt, EmailStr 等, 请将其转换为 typescript 中的基础类型, 例如: number, string 等。
 - 对于请求体相关的 schema, 例如: **ReqBody, **Create, **Update 这种, 当其 pydantic schema 中有 default/default_factory(或者说可以不填的) 时, 在 typescript type 中请使用 ? 语法将其标注为可选字段(因为我在前端传参时实际可以不传), 并在其后注释 // default to ...
 - 对于返回体相关的 schema, 例如: **Base, **Detail 这种, 有 default 值的则不应当使用 ?, 因为它总是会有一个值返回回来。
 - 后端 pydantic schema 中的各种 field 信息以外的内容, 例如 model_validator, 其它方法等, 你都应当忽略，因为这不影响 typescript type 的生成。
-- 如果你收到的代码中含有 import 语句, 请你将其中的相对路径 import(项目内 import 而非第三方库 import)转换为前端项目中的相对路径 import。例如: from .enum ..., from .base ..., from ..integration_auth ...
+- 如果你收到的代码中含有 import 语句, 请你将其中的**相对**路径 import(项目内 import 而非第三方库 import)转换为前端项目中的相对路径 import。
 - 如果你收到的代码中不含有 import 语句, 请你生成的代码中也千万不要包含 import 语句! 并且你可以总是假设前端项目中已经有了这些 import 语句, 所有涉及到的你没看见的类型, 你都可以认为在前方已经定义过了可以直接使用。
 - 如果你收到的代码里不含有任何需要转换的东西，都是无关的东西, 请直接返回 {{ "converted_segment": "" }}。
-- 对于从 autom.engine.integration_auth 和 autom.engine.project 中 import 的内容, 请将其转换为前端项目中的相对路径 import, 并且 import 路径为 .autom_entities(因为这两个第三方库的 schema 被放到了这个位置)。
-- 对于所有的相对路径 import, 请使用完全相同的相对路径进行 import, 例如 from .base, from .enum, from ..entities, from ..base, from ..enum 等等。具体是使用 .. 还是 . 请与后端代码保持完全一致。
+- 对于从 autom.engine.integration_auth 和 autom.engine.project 中 import 的内容, 请将其转换为前端项目中的相对路径 import, 并且 import 路径为 .autom_entities 或者 ../autom_entities(因为这两个第三方库的 schema 被放到了这个位置)。
+- 对于所有的相对路径 import, 请使用完全相同的相对路径进行 import, 例如 from ./base, from ./enum, from ../entities, from ../base, from ../enum 等等。具体是使用 .. 还是 . 请与后端代码保持完全一致。
+- 例子3中没有 import 语句, 你不需要生成 import 语句。但是如果例子 3 开头有 import 语句，你就必须按照上述注意事项考虑在生成的代码中包括 import 语句！
 '''.strip()
 
 user_input_promt = '''
