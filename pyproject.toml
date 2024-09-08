@@ -9,6 +9,7 @@ readme = "README.md"
 python = "^3.11"
 # autom = { git = "git@github.com:NaturaFlex/autom.git", branch = "main" }
 autom = { path = "/home/steve/workspace/autom" }
+pydantic = "^2.9.0"
 
 [tool.autom]
 qualifier = "azathoth"
