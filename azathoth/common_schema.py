@@ -20,5 +20,7 @@ class AutomFrontendFileMap(AutomSchema):
         if autom_frontend_root_path is None:
             autom_frontend_root_path = self.autom_frontend_root_path
         for path, content in self.autom_frontend_file_content_map.items():
+            if not path.parent.exists():
+                path.parent.mkdir(parents=True, exist_ok=True)
             with open(autom_frontend_root_path / path, 'w') as f:
                 f.write(content)

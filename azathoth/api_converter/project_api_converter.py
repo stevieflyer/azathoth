@@ -1,4 +1,3 @@
-from typing import Dict, Type
 from autom.engine import (
     AutomSchema, Request, Response,
     AgentWorker, PluggerWorker, DispatchBridgeWorker,
@@ -78,7 +77,7 @@ class EnumeratorFileAPIConverterDispatchBridgeWorker(DispatchBridgeWorker):
     def define_dst_schema(cls) -> AutomSchema:
         return FileAPIConverterInput
 
-    def dispatch(self, req: Request) -> Dict[int, Response]:
+    def dispatch(self, req: Request) -> dict[int, Response]:
         req_body: EnumeratorOutput = req.body
         batch_responses: dict[int, Response[FileAPIConverterInput]] = {}
 
