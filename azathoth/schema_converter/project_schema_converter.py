@@ -1,12 +1,14 @@
 from typing import Dict
 from autom.engine import (
-    Request, Response, AgentWorker, PluggerWorker, AggregatorWorker,
-    DispatchBridgeWorker, CollectPluggerWorker,AutomSchema, BatchRequestSchema,
-    AutomGraph, Node, Link, GraphAgentWorker, Socket, SocketCall, SocketRequestBody,
+    Request, Response, AgentWorker, PluggerWorker,
+    AutomGraph, Node, Link, GraphAgentWorker, SocketCall, SocketRequestBody,
+    DispatchBridgeWorker, CollectPluggerWorker, AutomSchema, BatchRequestSchema,
 )
 from autom.official import HolderAgentWorker, IdentityBridgeWorker
 
 from .schema import *
+from ..common_agent import *
+from ..common_schema import *
 from .file_schema_converter import FileSchemaConverter
 
 
@@ -48,39 +50,6 @@ class AutomProjectSchemaConverter(GraphAgentWorker):
 
 
 # Repo Schema Converter: BackendSchemaConverter, EngineSchemaConverter
-class AutomFrontendFileMapAggregator(AggregatorWorker):
-    @classmethod
-    def define_output_schema(cls):
-        return AutomFrontendFileMap
-
-    @classmethod
-    def define_socket_list(cls) -> list[Socket]:
-        return [
-            Socket(
-                name='set_autom_frontend_root_path',
-                input_type=Path,
-                socket_handler=cls._set_autom_frontend_root_path,
-            ),
-            Socket(
-                name='update_file_map',
-                input_type=dict,
-                socket_handler=cls._update_file_map,
-            )
-        ]
-    
-    def _set_autom_frontend_root_path(self, data: Path):
-        self._output_as_dict['autom_frontend_root_path'] = data
-
-    def _update_file_map(self, data: dict):
-        for key, value in data.items():
-            if not isinstance(key, Path) or not isinstance(value, str):
-                raise TypeError(f"Expected dict[Path, str], got {type(key)}[{type(value)}]")
-
-        if 'autom_frontend_file_content_map' not in self._output_as_dict:
-            self._output_as_dict['autom_frontend_file_content_map'] = {}
-        self._output_as_dict['autom_frontend_file_content_map'].update(data)
-
-
 class ConverterInputFrontendFileMapPlugger(PluggerWorker):
     @classmethod
     def define_input_schema(cls):

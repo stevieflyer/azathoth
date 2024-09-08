@@ -1,6 +1,5 @@
 from enum import StrEnum
 from pathlib import Path
-from typing import Optional
 
 from autom.engine import AutomSchema, AutomField
 from pydantic import model_validator, PositiveInt
@@ -22,9 +21,6 @@ class RepoEnum(StrEnum):
             return ProgrammingLanguage.python
         else:
             return ProgrammingLanguage.typescript
-
-
-RelPathContentMap = dict[Path, str]
 
 
 class SrcDstFilePairInfo(AutomSchema):
@@ -55,26 +51,10 @@ class AutomProjectSchemaConverterInput(AutomSchema):
     autom --> autom_frontend
     autom_backend --> autom_frontend
     """
-    autom_root_path: Path
+    autom_engine_root_path: Path
     autom_backend_root_path: Path
     autom_frontend_root_path: Path
     max_lines_per_segment: PositiveInt = AutomField(512, description="Max lines per segment, higher value can reduce the overhead prompt cost, lower value can speed up the conversion process")
-
-
-class AutomFrontendFileMap(AutomSchema):
-    """Output Schema for AutomSchemaAttacher
-    
-    The file map key is ALWAYS the relative path
-    """
-    autom_frontend_root_path: Path
-    autom_frontend_file_content_map: RelPathContentMap
-
-    def dump_to_disk(self, autom_frontend_root_path: Optional[Path] = None):
-        if autom_frontend_root_path is None:
-            autom_frontend_root_path = self.autom_frontend_root_path
-        for path, content in self.autom_frontend_file_content_map.items():
-            with open(autom_frontend_root_path / path, 'w') as f:
-                f.write(content)
 
 
 class SchemaConvertPlan(AutomSchema):
