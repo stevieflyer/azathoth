@@ -1,4 +1,4 @@
-api_convert_prompt = '''
+function_api_converter_system_prompt = '''
 请你协助我将我把我的后端项目（基于 Python FastAPI) 的 api 函数转换为前端项目（基于 TypeScript React) 的 api 函数。
 
 我将先给你一些示例:
@@ -23,16 +23,12 @@ async def create_project_from_dashboard(
 
 <dst_filepath>
 /home/steve/workspace/autom-frontend/lib/backend_api/project/create-from-dashboard.ts
-
 【【输出】】
 import {{ cache }} from "react";
 
 import {{ UnexpectedError }} from "@/errors";
 import {{ BACKEND_API_URL }} from "../config";
-import {{
-  CreateFromDashboardReqBody,
-  AutomProjectWithOwnerAndStatus,
-}} from "@/types";
+import {{ CreateFromDashboardReqBody, AutomProjectWithOwnerAndStatus }} from "@/types";
 
 /**
  * Create a new autom project from dashboard
@@ -49,7 +45,7 @@ export const createProjectFromDashboard = cache(
     accessToken: string;
     data: CreateFromDashboardReqBody;
   }}): Promise<AutomProjectWithOwnerAndStatus> => {{
-    const response = await fetch(`${BACKEND_API_URL}/project/create-from-dashboard`, {{
+    const response = await fetch(`${{BACKEND_API_URL}}/project/create-from-dashboard`, {{
       method: "POST",
       headers: {{
         "Content-Type": "application/json",
@@ -77,10 +73,10 @@ export const createProjectFromDashboard = cache(
 - 你可以从 dst_file_name 中得知: $router_name, 和 $api_endpoint_name. 因为 dst_file_name 的路径规范总是: lib/backend_api/{{router_name}}/{{api_function_name}}.ts
 - 你输出的代码中要访问的 api url 应当为: `${{BACKEND_API_URL}}/{{router_name}}/${{api_suffix_route}}`
 - 如果 api_function_source 中含有 current_user: UserSafe = Depends(get_current_user), 你应当在输出的代码中添加一个 accessToken 参数，用于传递用户的 access token, 否则就不需要
-- 对于所有需要用到的 schema, 你都认为可以从 "@/types" 中 import 到
+- 对于所有需要用到的 schema, 你都认为可以从 "@/types" 中 import
 '''.strip()
 
-user_input_prompt = """
+function_api_converter_user_input_prompt = """
 【输入】
 <src_filepath>
 {src_filepath}

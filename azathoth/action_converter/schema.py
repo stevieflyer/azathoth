@@ -9,10 +9,6 @@ class FileActionConverterInput(AutomSchema):
     action_dst_fullpath: Path
 
 
-class FileActionConverterOutput(FileActionConverterInput):
-    action_dst_content: str
-
-
 class AutomProjectActionConverterInput(AutomSchema):
     autom_frontend_root_path: Path
 
@@ -23,4 +19,3 @@ ProjectActionConvertPlannerInput = AutomProjectActionConverterInput
 class ProjectActionConvertPlan(AutomSchema):
     autom_frontend_root_path: Path
     src_dst_filepaths_pair: list[tuple[Path, Path]]
-

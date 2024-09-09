@@ -1,47 +1,46 @@
+from pydantic import BaseModel
 from autom.utils import SingleLLMUsage
 from autom.official import BaseOpenAIWorker
 from autom.engine import Request, Response, AgentWorker
 
-from .prompt import *
-from .schema import *
+from .schema import RepoEnum, SegmentSchemaConvertParams, ConvertedSchemaSegment
+from .prompt import backend_segment_schema_convert_system_prompt, backend_segment_schema_convert_user_input_prompt
 
 
-# Segment Schema Converter, File Segmenter
 class SegmentSchemaConverter(BaseOpenAIWorker, AgentWorker):
+    """Segment-Level Schema Converter
+
+    Convert a segment of Python code(usually contains pydantic schema, enum, literal, etc.) to TypeScript type definitions.
+    """
     @classmethod
     def define_input_schema(cls):
-        return SegmentSchemaConverterInput
+        return SegmentSchemaConvertParams
 
     @classmethod
     def define_output_schema(cls):
-        return SegmentSchemaConverterOutput
+        return ConvertedSchemaSegment
 
     def invoke(self, req: Request) -> Response:
-        from pydantic import BaseModel
-        class ConvertOutput(BaseModel):
-            """internal class for openai structured response"""
+        class Output(BaseModel):
             converted_segment: str
 
-        req_body: SegmentSchemaConverterInput = req.body
-        resp = Response[SegmentSchemaConverterOutput].from_worker(self)
+        req_body: SegmentSchemaConvertParams = req.body
+        resp = Response[ConvertedSchemaSegment].from_worker(self)
         if req_body.src_repo_enum == RepoEnum.BACKEND:
             chat_completion = self.openai_client.beta.chat.completions.parse(
                 model="gpt-4o-mini",
                 messages=[
-                    {"role": "system", "content": backend_system_prompt},
-                    {"role": "user", "content": user_input_promt.format(src_file_relpath=req_body.src_file_relpath.as_posix(), code_segment=req_body.segment)},
+                    {"role": "system", "content": backend_segment_schema_convert_system_prompt.format()},
+                    {"role": "user", "content": backend_segment_schema_convert_user_input_prompt.format(
+                        src_file_relpath=req_body.src_filepath.relative_to(req_body.src_root_path).as_posix(),
+                        code_segment=req_body.segment,
+                    )},
                 ],
-                response_format=ConvertOutput,
+                response_format=Output,
             )
             resp.add_llm_usage(SingleLLMUsage.from_openai_chat_completion(chat_completion))
-            resp.body = SegmentSchemaConverterOutput(
-                src_repo_enum=req_body.src_repo_enum,
-                src_repo_root=req_body.src_repo_root,
-                src_file_relpath=req_body.src_file_relpath,
-                dst_repo_enum=req_body.dst_repo_enum,
-                dst_repo_root=req_body.dst_repo_root,
-                dst_file_relpath=req_body.dst_file_relpath,
-                converted_segment=chat_completion.choices[0].message.parsed.converted_segment,
+            resp.body = ConvertedSchemaSegment(
+                converted_schema=chat_completion.choices[0].message.parsed.converted_segment,
             )
         else:
             raise NotImplementedError

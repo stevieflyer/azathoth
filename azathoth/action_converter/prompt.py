@@ -1,4 +1,4 @@
-api_convert_prompt = '''
+api_convert_system_prompt = '''
 请你协助我将我把我的前端项目（基于 TypeScript NextJS) 的 backend api 文件调用转换为 server actions 文件。
 
 我将先给你一些示例:
@@ -61,7 +61,7 @@ export const getIntegrationAuthsAction = async ({{ limit = 20, offset = 0 }}: {{
 - 你永远可以认为 api 函数可以从 "@/lib/backend_api" 中引入, 而且你永远可以认为 getAccessTokenAction 可以从 "@/app/(root)/_actions/token" 中引入。
 '''.strip()
 
-user_input_prompt = """
+api_convert_user_input_prompt = """
 【输入】
 <api_source>
 {api_source}

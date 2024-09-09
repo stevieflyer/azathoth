@@ -8,10 +8,10 @@ class AutomProjectAPIConverterInput(AutomSchema):
     autom_frontend_root_path: Path
 
 
-EnumeratorInput = AutomProjectAPIConverterInput
+FileEnumeratorInput = AutomProjectAPIConverterInput
 
 
-class EnumeratorOutput(AutomSchema):
+class EnumeratedFiles(AutomSchema):
     autom_backend_root_path: Path
     autom_frontend_root_path: Path
     src_file_fullpaths: list[Path]
@@ -39,7 +39,3 @@ class FunctionAPIConverterInput(AutomSchema):
     dst_file_fullpath: Path
     autom_backend_root_path: Path
     autom_frontend_root_path: Path
-
-
-class FunctionAPIConverterOutput(FunctionAPIConverterInput):
-    frontend_api_source: str

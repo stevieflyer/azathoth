@@ -1,3 +1,4 @@
+import re
 import os
 import ast
 from os import PathLike
@@ -105,6 +106,46 @@ def extract_python_parts(file_path: PathLike, project_root: PathLike) -> PythonP
     )
 
 
+class ImportsInfo(BaseModel):
+    imports: list[str] = Field(default_factory=list, description="The list of import modules.")
+    import_froms: dict[str, list[str]] = Field(default_factory=dict, description="The dict of import modules from a module.")
+
+
+def extract_imports_info(imports_content: str) -> ImportsInfo:
+    """
+    Extract import statements from valid Python import lines and categorize
+    them into 'imports' and 'import_froms'.
+    """
+    imports_info = ImportsInfo()
+    
+    # Split content by lines
+    lines = imports_content.splitlines()
+
+    for line in lines:
+        line = line.strip()
+
+        # Skip empty lines and lines that don't start with 'import' or 'from'
+        if not line or (not line.startswith('import') and not line.startswith('from')):
+            continue
+
+        # Handle 'from module import ...' statements
+        if line.startswith('from'):
+            match = re.match(r'^from\s+([\w\.]+)\s+import\s+(.+)', line)
+            if match:
+                module, qualifiers = match.groups()
+                qualifiers_list = [q.strip() for q in qualifiers.split(',')]
+                imports_info.import_froms[module] = qualifiers_list
+        
+        # Handle 'import module' statements
+        elif line.startswith('import'):
+            match = re.match(r'^import\s+([\w\.]+)', line)
+            if match:
+                module = match.group(1)
+                imports_info.imports.append(module)
+
+    return imports_info
+
+
 def find_class_source_in_file(file_path: PathLike, class_names: list[str]) -> list[str]:
     """Find class definitions in a Python file.
 
@@ -206,40 +247,3 @@ def extract_function_dependencies(function_header: str, imports: list[str], proj
         function_header=function_header,
         dependencies=dependency_parts
     )
-
-
-# Usage example
-file_path = '/home/steve/workspace/autom-backend/app/api/v1/endpoints/project.py'
-project_root = '/home/steve/workspace/autom-backend/'
-
-def test_extract_and_get_function_header():
-    # 提取 Python 文件的部分内容
-    python_parts = extract_python_parts(file_path, project_root)
-    
-    # 打印提取的导入和函数头部
-    print("Imports:")
-    for imp in python_parts.imports:
-        print(imp)
-
-    print("\nFunction Headers:")
-    for function_name, func_header in python_parts.function_name_header_dict.items():
-        print(f"Function({function_name}):")
-        print(func_header)
-        print(f"##################################\n")
-
-    print(f"Function Headers OVER!!!")
-
-    # 测试获取函数头部，包含依赖项
-    try:
-        function_name_source_dict = python_parts.get_function_name_source_dict(with_dependencies=True)
-        print("\nFunction Headers with Dependencies:")
-        for function_name, func_source in function_name_source_dict.items():
-            print(f"Function({function_name}):")
-            print(func_source)
-            print("############################################\n")
-    except ValueError as e:
-        print(f"Error: {e}")
-
-if __name__ == "__main__":
-    test_extract_and_get_function_header()
-

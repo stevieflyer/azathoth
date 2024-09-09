@@ -1,4 +1,3 @@
-from .prompt import *
 from .schema import *
 from .file_schema_converter import *
 from .segment_schema_converter import *
