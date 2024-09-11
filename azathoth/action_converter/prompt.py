@@ -34,8 +34,8 @@ export const getIntegrationAuths = cache(
 【【输出】】
 "use server";
 
-import {{ getIntegrationAuths }} from "@/lib/backend_api";
-import {{ getAccessTokenAction }} from "@/app/(root)/_actions/token";
+import {{ getIntegrationAuths }} from "@/lib/backend-api";
+import {{ getAccessTokenAction }} from "@/actions/get-access-token";
 
 export const getIntegrationAuthsAction = async ({{ limit = 20, offset = 0 }}: {{ limit?: number; offset?: number }}) => {{
   const accessToken = await getAccessTokenAction();
@@ -58,13 +58,13 @@ export const getIntegrationAuthsAction = async ({{ limit = 20, offset = 0 }}: {{
 - 你只需要关注输入的 api_source 中的函数头, 函数体跟 server action 的生成没有关系
 - 如果输入的 api_source 中含有 accessToken 参数, 那么输出的代码中你应当像例子中那样尝试 getAccessTokenAction, 并且在调用 api 函数时传递 accessToken 参数; 否则就不需要 accessToken 相关逻辑。
 - 如果 api_source 中的调用参数类型涉及到自定义类型, 那么请确保你的输出代码中也包含相应的 types 引用（都从 @/types 引入）, 但是返回类型以及其它函数中用到的自定义类型, 我们是不需要引入的(正如例子1中我们不需要引入任何自定义类型)。
-- 你永远可以认为 api 函数可以从 "@/lib/backend_api" 中引入, 而且你永远可以认为 getAccessTokenAction 可以从 "@/app/(root)/_actions/token" 中引入。
+- 你永远可以认为 api 函数可以从 "@/lib/backend-api" 中引入, 而且你永远可以认为 getAccessTokenAction 可以从 "@/actions/get-access-token" 中引入。
+- 请永远使用解构赋值来获取参数, 哪怕只有一个参数, 因为这样 server action 的使用者会更加清楚传递哪些参数。
 '''.strip()
 
 api_convert_user_input_prompt = """
 【输入】
 <api_source>
 {api_source}
-
 【输出】
 """.strip()

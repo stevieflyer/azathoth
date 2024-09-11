@@ -3,17 +3,17 @@ from pathlib import Path
 from autom.engine import AutomSchema
 
 
-class FileActionConverterInput(AutomSchema):
+class FileActionConvertParams(AutomSchema):
     autom_frontend_root_path: Path
     api_src_fullpath: Path
     action_dst_fullpath: Path
 
 
-class AutomProjectActionConverterInput(AutomSchema):
+class AutomProjectActionConvertParams(AutomSchema):
     autom_frontend_root_path: Path
 
 
-ProjectActionConvertPlannerInput = AutomProjectActionConverterInput
+ProjectActionConvertPlannerInput = AutomProjectActionConvertParams
 
 
 class ProjectActionConvertPlan(AutomSchema):

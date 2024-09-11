@@ -75,7 +75,7 @@ def extract_python_parts(file_path: PathLike, project_root: PathLike) -> PythonP
         if isinstance(node, ast.Import) or isinstance(node, ast.ImportFrom):
             # Handle import statements
             import_parts.append(ast.unparse(node))
-        elif isinstance(node, ast.FunctionDef):
+        elif isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
             # Handle function definitions (without body)
             decorators = [f"@{ast.unparse(decorator)}" for decorator in node.decorator_list]
             func_name = node.name

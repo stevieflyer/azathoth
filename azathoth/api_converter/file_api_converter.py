@@ -80,7 +80,7 @@ class PlannerFunctionAPIConverterDispatchBridgeWorker(DispatchBridgeWorker):
                 body=FunctionAPIConverterInput(
                     api_function_source=function_source,
                     src_file_fullpath=req_body.src_file_fullpath,
-                    dst_file_fullpath=req_body.autom_frontend_root_path / f"lib/backend_api/{router_name}/{function_name}.ts",
+                    dst_file_fullpath=req_body.autom_frontend_root_path / f"lib/backend-api/{router_name}/{function_name}.ts",
                     autom_backend_root_path=req_body.autom_backend_root_path,
                     autom_frontend_root_path=req_body.autom_frontend_root_path,
                 )

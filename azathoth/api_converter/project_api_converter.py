@@ -9,7 +9,7 @@ from azathoth.common import (
     FilesContentFilesContentCollectPlugger, FilesContentAggregator, TSExportHerlper, FilesContentFilesContentPlugger,
 )
 from .file_api_converter import FileAPIConverter
-from .schema import AutomProjectAPIConverterInput, EnumeratedFiles, FileAPIConverterInput, FileEnumeratorInput
+from .schema import AutomProjectAPIConvertParams, EnumeratedFiles, FileAPIConverterInput, FileEnumeratorInput
 
 
 class AutomProjectAPIConverter(GraphAgentWorker):
@@ -17,7 +17,7 @@ class AutomProjectAPIConverter(GraphAgentWorker):
     def define_graph(cls) -> AutomGraph:
         graph = AutomGraph()
 
-        entry_node = Node.from_worker(HolderAgentWorker().with_schema(AutomProjectAPIConverterInput))
+        entry_node = Node.from_worker(HolderAgentWorker().with_schema(AutomProjectAPIConvertParams))
         entry_ts_export_helper_bridge = Link.from_worker(APIConverterTSExportHelperBridgeWorker())
         ts_export_helper = Node.from_worker(TSExportHerlper())
         ts_export_helper_exit_plugger = Link.from_worker(FilesContentFilesContentPlugger())
@@ -49,19 +49,19 @@ class AutomProjectAPIConverter(GraphAgentWorker):
 class APIConverterTSExportHelperBridgeWorker(BridgeWorker):
     @classmethod
     def define_input_schema(cls) -> AutomSchema | None:
-        return AutomProjectAPIConverterInput
+        return AutomProjectAPIConvertParams
 
     @classmethod
     def define_output_schema(cls) -> AutomSchema | None:
         return TSExportHelperInput
 
     def invoke(self, req: Request) -> Response:
-        req_body: AutomProjectAPIConverterInput = req.body
+        req_body: AutomProjectAPIConvertParams = req.body
         return Response[TSExportHelperInput].from_worker(self).success(
             body=TSExportHelperInput(
                 project_root_path=req_body.autom_frontend_root_path,
                 module_to_exports=[
-                    req_body.autom_frontend_root_path / 'lib/backend_api/',
+                    req_body.autom_frontend_root_path / 'lib/backend-api/',
                 ],
             )
         )
@@ -80,7 +80,7 @@ class AutomProjectAPIFileEnumerator(AgentWorker):
         req_body: FileEnumeratorInput = req.body
         endpoints_dir = req_body.autom_backend_root_path / 'app/api/v1/endpoints'
         excluded_files = ["__init__.py", "token.py"]
-        
+
         # iterate over all files in the endpoints directory except for the excluded files using rglob
         src_file_fullpaths = list(endpoints_dir.rglob('*.py'))
         src_file_fullpaths = [f for f in src_file_fullpaths if f.name not in excluded_files]

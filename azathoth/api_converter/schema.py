@@ -3,12 +3,12 @@ from pathlib import Path
 from autom.engine import AutomSchema
 
 
-class AutomProjectAPIConverterInput(AutomSchema):
+class AutomProjectAPIConvertParams(AutomSchema):
     autom_backend_root_path: Path
     autom_frontend_root_path: Path
 
 
-FileEnumeratorInput = AutomProjectAPIConverterInput
+FileEnumeratorInput = AutomProjectAPIConvertParams
 
 
 class EnumeratedFiles(AutomSchema):

@@ -12,7 +12,7 @@ from azathoth.common import (
     FilesContentAggregator, FileContentFilesContentCollectPlugger, TSExportHerlper, FilesContentFilesContentPlugger
 )
 from .file_action_converter import FileActionConverter
-from .schema import AutomProjectActionConverterInput, ProjectActionConvertPlannerInput, ProjectActionConvertPlan, FileActionConverterInput
+from .schema import AutomProjectActionConvertParams, ProjectActionConvertPlannerInput, ProjectActionConvertPlan, FileActionConvertParams
 
 
 class AutomProjectActionConverter(GraphAgentWorker):
@@ -20,7 +20,7 @@ class AutomProjectActionConverter(GraphAgentWorker):
     def define_graph(cls) -> AutomGraph:
         graph = AutomGraph()
 
-        entry_node = Node.from_worker(HolderAgentWorker().with_schema(AutomProjectActionConverterInput))
+        entry_node = Node.from_worker(HolderAgentWorker().with_schema(AutomProjectActionConvertParams))
         entry_ts_export_helper_bridge = Link.from_worker(ActionConverterTSExportHelperBridge())
         ts_export_helper = Node.from_worker(TSExportHerlper())
         ts_export_helper_exit_plugger = Link.from_worker(FilesContentFilesContentPlugger())
@@ -52,21 +52,21 @@ class AutomProjectActionConverter(GraphAgentWorker):
 class ActionConverterTSExportHelperBridge(BridgeWorker):
     @classmethod
     def define_input_schema(cls) -> AutomSchema | None:
-        return AutomProjectActionConverterInput
+        return AutomProjectActionConvertParams
 
     @classmethod
     def define_output_schema(cls) -> AutomSchema | None:
         return TSExportHelperInput
 
     def invoke(self, req: Request) -> Response:
-        req_body: AutomProjectActionConverterInput = req.body
+        req_body: AutomProjectActionConvertParams = req.body
         autom_frontend_root_path = req_body.autom_frontend_root_path
 
         return Response[TSExportHelperInput].from_worker(self).success(
             body=TSExportHelperInput(
                 project_root_path=autom_frontend_root_path,
                 module_to_exports=[
-                    autom_frontend_root_path / 'app/_actions'
+                    autom_frontend_root_path / 'actions' / 'backend-api'
                 ]
             )
         )
@@ -85,8 +85,8 @@ class ProjectActionConvertPlanner(AgentWorker):
         req_body: ProjectActionConvertPlannerInput = req.body
         autom_frontend_root_path = req_body.autom_frontend_root_path
 
-        src_api_dir = autom_frontend_root_path / 'lib/backend_api/'
-        dst_action_dir = autom_frontend_root_path / 'app/_actions/'
+        src_api_dir = autom_frontend_root_path / 'lib/backend-api/'
+        dst_action_dir = autom_frontend_root_path / 'actions/backend-api/'
         excluded_path = src_api_dir / 'config.ts'
         excluded_files = ['index.ts']
 
@@ -115,15 +115,15 @@ class PlannerFileActionConverterDispatchBridge(DispatchBridgeWorker):
 
     @classmethod
     def define_dst_schema(cls) -> AutomSchema:
-        return FileActionConverterInput
+        return FileActionConvertParams
 
     def dispatch(self, req: Request) -> dict[int, Response]:
         req_body: ProjectActionConvertPlan = req.body
-        batch_responses: dict[int, Response[FileActionConverterInput]] = {}
+        batch_responses: dict[int, Response[FileActionConvertParams]] = {}
         
         for i, (src_file_fullpath, dst_file_fullpath) in enumerate(req_body.src_dst_filepaths_pair):
-            batch_responses[i] = Response[FileActionConverterInput].from_worker(self).success(
-                body=FileActionConverterInput(
+            batch_responses[i] = Response[FileActionConvertParams].from_worker(self).success(
+                body=FileActionConvertParams(
                     autom_frontend_root_path=req_body.autom_frontend_root_path,
                     api_src_fullpath=src_file_fullpath,
                     action_dst_fullpath=dst_file_fullpath,

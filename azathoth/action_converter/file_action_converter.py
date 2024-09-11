@@ -3,14 +3,14 @@ from autom.official import BaseOpenAIWorker
 from autom.engine import AgentWorker, AutomSchema, Request, Response
 
 from azathoth.common import FileContent
-from .schema import FileActionConverterInput
+from .schema import FileActionConvertParams
 from .prompt import api_convert_system_prompt, api_convert_user_input_prompt
 
 
 class FileActionConverter(BaseOpenAIWorker, AgentWorker):
     @classmethod
     def define_input_schema(cls) -> AutomSchema | None:
-        return FileActionConverterInput
+        return FileActionConvertParams
 
     @classmethod
     def define_output_schema(cls) -> AutomSchema | None:
@@ -21,7 +21,7 @@ class FileActionConverter(BaseOpenAIWorker, AgentWorker):
         class Output(BaseModel):
             server_action_code: str
 
-        req_body: FileActionConverterInput = req.body
+        req_body: FileActionConvertParams = req.body
         with open(req_body.api_src_fullpath, 'r') as f:
             api_source = f.read()
 
