@@ -26,7 +26,7 @@ def get_class_detail_representitive_by_id(
 import {{ cache }} from "react";
 
 import {{ UnexpectedError }} from "@/errors";
-import {{ BACKEND_API_URL }} from "../config";
+import {{ BACKEND_API_URL }} from "@/config";
 import {{ ClassRepresentitiveDetail, PaginationQueryReqBody }} from "@/types";
 
 /**

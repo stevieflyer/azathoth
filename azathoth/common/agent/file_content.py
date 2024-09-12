@@ -1,8 +1,9 @@
 from pathlib import Path
+from typing import Type
 
 from autom.engine import (
-    AutomSchema, AggregatorWorker, PluggerWorker, CollectPluggerWorker,
     Request, Response, Socket, SocketCall, SocketRequestBody, BatchRequestSchema,
+    AutomSchema, AggregatorWorker, PluggerWorker, CollectPluggerWorker, AgentWorker,
 )
 from autom.logger import autom_logger
 
@@ -169,6 +170,27 @@ class FileContentAggregator(AggregatorWorker):
         )
 
 
+class FilesDumper(AgentWorker):
+    @classmethod
+    def define_input_schema(cls) -> AutomSchema | None:
+        return FilesContent
+
+    @classmethod
+    def define_output_schema(cls) -> AutomSchema | None:
+        return FilesContent
+    
+    def invoke(self, req: Request) -> Response:
+        req_body: FilesContent = req.body
+        try:
+            req_body.dump_to_disk()
+        except Exception as e:
+            autom_logger.error(f"Failed to dump FilesContent to disk: {e}.")
+            raise e
+        return Response[FilesContent].from_worker(self).success(
+            body=req_body
+        )
+
+
 __all__ = [
     'FilesContentAggregator',
     'FilesContentFilesContentPlugger',
@@ -176,4 +198,5 @@ __all__ = [
     'FileContentFilesContentPlugger',
     'FileContentFilesContentCollectPlugger',
     'FileContentAggregator',
+    'FilesDumper',
 ]

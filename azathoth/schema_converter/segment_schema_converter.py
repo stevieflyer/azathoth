@@ -39,8 +39,12 @@ class SegmentSchemaConverter(BaseOpenAIWorker, AgentWorker):
                 response_format=Output,
             )
             resp.add_llm_usage(SingleLLMUsage.from_openai_chat_completion(chat_completion))
+            parsed = chat_completion.choices[0].message.parsed
+            if parsed is None:
+                raise RuntimeError(f"Failed to parse the response from OpenAI: {chat_completion.choices[0].message}. Request: {req}")
+    
             resp.body = ConvertedSchemaSegment(
-                converted_schema=chat_completion.choices[0].message.parsed.converted_segment,
+                converted_schema=parsed.converted_segment,
             )
         else:
             raise NotImplementedError

@@ -1,29 +1,25 @@
 from pathlib import Path
-from typing import Type
 
 from autom.engine import (
-    AutomSchema, Request, Response,
-    AgentWorker, BridgeWorker, DispatchBridgeWorker, GraphAgentWorker, AutomGraph, Node, Link,
+    AutomSchema, Request, Response, SocketCall, SocketRequestBody,
+    PluggerWorker, AgentWorker, DispatchBridgeWorker, GraphAgentWorker, AutomGraph, Node, Link,
 )
-from autom.official import HolderAgentWorker, IdentityBridgeWorker
+from autom.official import HolderAgentWorker, IdentityBridgeWorker, NullPlugger
 
 from azathoth.common import (
-    TSExportHelperInput,
+    TSExportHelperInputAggregator, FilesDumper,
     FilesContentAggregator, FileContentFilesContentCollectPlugger, TSExportHerlper, FilesContentFilesContentPlugger
 )
 from .file_action_converter import FileActionConverter
 from .schema import AutomProjectActionConvertParams, ProjectActionConvertPlannerInput, ProjectActionConvertPlan, FileActionConvertParams
 
 
-class AutomProjectActionConverter(GraphAgentWorker):
+class InnerActionConverter(GraphAgentWorker):
     @classmethod
     def define_graph(cls) -> AutomGraph:
         graph = AutomGraph()
 
         entry_node = Node.from_worker(HolderAgentWorker().with_schema(AutomProjectActionConvertParams))
-        entry_ts_export_helper_bridge = Link.from_worker(ActionConverterTSExportHelperBridge())
-        ts_export_helper = Node.from_worker(TSExportHerlper())
-        ts_export_helper_exit_plugger = Link.from_worker(FilesContentFilesContentPlugger())
         entry_planner_bridge = Link.from_worker(IdentityBridgeWorker())
         project_action_convert_planner = Node.from_worker(ProjectActionConvertPlanner())
         planner_file_action_converter_dispatch_bridge = Link.from_worker(PlannerFileActionConverterDispatchBridge())
@@ -32,13 +28,10 @@ class AutomProjectActionConverter(GraphAgentWorker):
         exit_aggregator = Node.from_worker(FilesContentAggregator())
 
         graph.add_node(entry_node)
-        graph.add_node(ts_export_helper)
         graph.add_node(project_action_convert_planner)
         graph.add_node(file_action_converter)
         graph.add_node(exit_aggregator)
 
-        graph.bridge(entry_node, ts_export_helper, entry_ts_export_helper_bridge)
-        graph.plug(ts_export_helper, exit_aggregator, ts_export_helper_exit_plugger)
         graph.bridge(entry_node, project_action_convert_planner, entry_planner_bridge)
         graph.bridge(project_action_convert_planner, file_action_converter, planner_file_action_converter_dispatch_bridge)
         graph.plug(file_action_converter, exit_aggregator, file_action_converter_exit_collect_plugger)
@@ -49,24 +42,72 @@ class AutomProjectActionConverter(GraphAgentWorker):
         return graph
 
 
-class ActionConverterTSExportHelperBridge(BridgeWorker):
+class AutomProjectActionConverter(GraphAgentWorker):
+    @classmethod
+    def define_graph(cls) -> AutomGraph:
+        graph = AutomGraph()
+
+        entry_node = Node.from_worker(HolderAgentWorker().with_schema(AutomProjectActionConvertParams))
+        entry_inner_action_converter_bridge = Link.from_worker(IdentityBridgeWorker())
+        inner_action_converter = Node.from_worker(InnerActionConverter())
+        inner_action_converter_action_files_dumper_bridge = Link.from_worker(IdentityBridgeWorker())
+        action_files_dumper = Node.from_worker(FilesDumper())
+        action_files_dumper_ts_export_aggregator_plugger = Link.from_worker(NullPlugger())
+        action_files_dumper_exit_plugger = Link.from_worker(FilesContentFilesContentPlugger())
+
+        entry_ts_export_aggregator_plugger = Link.from_worker(ConvertParamsTSExportHelperPlugger())
+        ts_export_aggregator = Node.from_worker(TSExportHelperInputAggregator())
+        ts_export_aggregator_ts_export_helper_bridge = Link.from_worker(IdentityBridgeWorker())
+        ts_export_helper = Node.from_worker(TSExportHerlper())
+        ts_export_helper_index_files_dumper_bridge = Link.from_worker(IdentityBridgeWorker())
+        index_files_dumper = Node.from_worker(FilesDumper())
+        index_files_dumper_exit_plugger = Link.from_worker(FilesContentFilesContentPlugger())
+        exit_aggregator = Node.from_worker(FilesContentAggregator())
+
+        graph.add_node(entry_node)
+        graph.add_node(inner_action_converter)
+        graph.add_node(action_files_dumper)
+        graph.add_node(ts_export_aggregator)
+        graph.add_node(ts_export_helper)
+        graph.add_node(index_files_dumper)
+        graph.add_node(exit_aggregator)
+        
+        graph.bridge(entry_node, inner_action_converter, entry_inner_action_converter_bridge)
+        graph.bridge(inner_action_converter, action_files_dumper, inner_action_converter_action_files_dumper_bridge)
+        graph.plug(action_files_dumper, exit_aggregator, action_files_dumper_exit_plugger)
+        graph.plug(action_files_dumper, ts_export_aggregator, action_files_dumper_ts_export_aggregator_plugger)
+        graph.plug(entry_node, ts_export_aggregator, entry_ts_export_aggregator_plugger)
+        graph.bridge(ts_export_aggregator, ts_export_helper, ts_export_aggregator_ts_export_helper_bridge)
+        graph.bridge(ts_export_helper, index_files_dumper, ts_export_helper_index_files_dumper_bridge)
+        graph.plug(index_files_dumper, exit_aggregator, index_files_dumper_exit_plugger)
+        
+        graph.set_entry_node(entry_node)
+        graph.set_exit_node(exit_aggregator)
+
+        return graph
+
+
+class ConvertParamsTSExportHelperPlugger(PluggerWorker):
     @classmethod
     def define_input_schema(cls) -> AutomSchema | None:
         return AutomProjectActionConvertParams
 
-    @classmethod
-    def define_output_schema(cls) -> AutomSchema | None:
-        return TSExportHelperInput
-
     def invoke(self, req: Request) -> Response:
         req_body: AutomProjectActionConvertParams = req.body
-        autom_frontend_root_path = req_body.autom_frontend_root_path
 
-        return Response[TSExportHelperInput].from_worker(self).success(
-            body=TSExportHelperInput(
-                project_root_path=autom_frontend_root_path,
-                module_to_exports=[
-                    autom_frontend_root_path / 'actions' / 'backend-api'
+        return Response[SocketRequestBody].from_worker(self).success(
+            body=SocketRequestBody(
+                calls=[
+                    SocketCall(
+                        socket_name="set_project_root_path",
+                        data=req_body.autom_frontend_root_path,
+                    ),
+                    SocketCall(
+                        socket_name="set_module_to_exports",
+                        data=[
+                            req_body.autom_frontend_root_path / 'actions' / 'backend-api'
+                        ],
+                    )
                 ]
             )
         )
@@ -76,7 +117,7 @@ class ProjectActionConvertPlanner(AgentWorker):
     @classmethod
     def define_input_schema(cls) -> AutomSchema | None:
         return ProjectActionConvertPlannerInput
-    
+
     @classmethod
     def define_output_schema(cls) -> AutomSchema | None:
         return ProjectActionConvertPlan
