@@ -1,8 +1,8 @@
 from pathlib import Path
 
 from autom.engine import (
-    DispatchBridgeWorker, AutomSchema,
-    AutomGraph, Node, Link, GraphAgentWorker,
+    autom_registry,
+    DispatchBridgeWorker, AutomSchema, AutomGraph, Node, Link, GraphAgentWorker,
     Request, Response, AgentWorker, PluggerWorker, SocketRequestBody, SocketCall,
 )
 from autom.official import HolderAgentWorker, IdentityBridgeWorker, NullPlugger
@@ -43,6 +43,7 @@ class InnerSchemaConverter(GraphAgentWorker):
         return graph
 
 
+@autom_registry(is_internal=False)
 class BackendSchemaConverter(GraphAgentWorker):
     @classmethod
     def define_graph(cls) -> AutomGraph:

@@ -19,13 +19,15 @@ class SchemaImportConvertParams(AutomSchema):
 
     @classmethod
     def define_examples(cls) -> list[dict]:
-        return {
-            "src_filepath": "/home/steve/workspace/autom-backend/app/schemas/entities.py",
-            "src_root_path": "/home/steve/workspace/autom-backend/",
-            "dst_filepath": "/home/steve/workspace/autom-frontend/types/entites.ts",
-            "dst_root_path": "/home/steve/workspace/autom-frontend/",
-            "imports_content": "from datetime import datetime\nfrom typing import Optional, Annotated\n\nfrom pydantic import EmailStr, Field, StringConstraints, model_validator\nfrom autom.engine.integration_auth import name_regexp, qualifier_regexp, IntegrationAuthSecretMeta\nfrom autom.engine.project import qualifier_regexp, ProjectPublicity, ProjectRunnableStatus, ProjectGitStatus\n\nfrom .base import MyBaseModel\nfrom .enum import RegistryPublicity, IntegrationAuthStatusLiteral, SecretStatusLiteral, WorkerIntegrationAuthorizationLiteral\n"
-        }
+        return [
+            {
+                "src_filepath": "/home/steve/workspace/autom-backend/app/schemas/entities.py",
+                "src_root_path": "/home/steve/workspace/autom-backend/",
+                "dst_filepath": "/home/steve/workspace/autom-frontend/types/entites.ts",
+                "dst_root_path": "/home/steve/workspace/autom-frontend/",
+                "imports_content": "from datetime import datetime\nfrom typing import Optional, Annotated\n\nfrom pydantic import EmailStr, Field, StringConstraints, model_validator\nfrom autom.engine.integration_auth import name_regexp, qualifier_regexp, IntegrationAuthSecretMeta\nfrom autom.engine.project import qualifier_regexp, ProjectPublicity, ProjectRunnableStatus, ProjectGitStatus\n\nfrom .base import MyBaseModel\nfrom .enum import RegistryPublicity, IntegrationAuthStatusLiteral, SecretStatusLiteral, WorkerIntegrationAuthorizationLiteral\n"
+            },
+        ]
 
 
 class ConvertedImportsContent(AutomSchema):

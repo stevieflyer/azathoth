@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from autom.engine import AutomSchema
+from autom.engine import AutomSchema, AutomField, autom_registry
 
 
 class FileActionConvertParams(AutomSchema):
@@ -9,8 +9,12 @@ class FileActionConvertParams(AutomSchema):
     action_dst_fullpath: Path
 
 
+@autom_registry(is_internal=False)
 class AutomProjectActionConvertParams(AutomSchema):
-    autom_frontend_root_path: Path
+    autom_frontend_root_path: Path = AutomField(
+        ...,
+        description="The root path of the Autom Frontend Project",
+    )
 
 
 ProjectActionConvertPlannerInput = AutomProjectActionConvertParams

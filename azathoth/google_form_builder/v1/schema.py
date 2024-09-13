@@ -1,9 +1,9 @@
-from autom import AutomSchema, AutomField
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
+from autom import AutomSchema, AutomField, autom_registry
 
 
-class FormDesignRequirements(AutomSchema):
+class QuestionaireDesignRequirement(AutomSchema):
     user_requirement: str = AutomField(
         ...,
         description="User requirement on the form design",
@@ -56,12 +56,13 @@ class Item(AutomSchema):
         }
 
 
-class FormDesign(AutomSchema):
+@autom_registry(is_internal=False)
+class QuestionaireDesign(AutomSchema):
     title: str
     description: str
     items: list[Item]
 
-    def to_google_form(self, access_token: str):
+    def create_google_form(self, access_token: str):
         """Dump the FormDesign to a Google Form
 
         Args:
@@ -96,11 +97,13 @@ class FormDesign(AutomSchema):
         return GoogleFormsCreateFormResponse.model_validate(result)
 
 
+@autom_registry(is_internal=False)
 class GoogleFormsInfo(AutomSchema):
     title: str
     documentTitle: str
 
 
+@autom_registry(is_internal=False)
 class GoogleFormsCreateFormResponse(AutomSchema):
     formId: str
     info: GoogleFormsInfo
@@ -118,8 +121,8 @@ class GoogleFormsCreateFormResponse(AutomSchema):
 
 
 __all__ = [
-    'FormDesignRequirements',
-    'FormDesign',
+    'QuestionaireDesignRequirement',
+    'QuestionaireDesign',
     'Item',
     'GoogleFormsInfo',
     'GoogleFormsCreateFormResponse',

@@ -1,4 +1,4 @@
-form_builder_system_prompt = """
+questionaire_desginer_system_prompt = """
 你是一个问卷设计师, 你需要帮助用户设计问卷。
 
 你需要依据用户的需求, 设计出问卷的 title, description 以及每个问题的内容和选项。
@@ -10,7 +10,7 @@ form_builder_system_prompt = """
 问卷题目数目最少一个, 最多不限, 关键是精准符合用户的要求。
 """.strip()
 
-form_builder_user_input_prompt = """
+questionaire_designer_user_input_prompt = """
 【用户要求】
 {user_requirement}
 

@@ -2,6 +2,7 @@ from autom.engine import (
     AutomSchema, Request, Response, SocketCall, SocketRequestBody,
     AgentWorker, PluggerWorker, DispatchBridgeWorker, GraphAgentWorker, AutomGraph, Node, Link,
 )
+from autom import autom_registry
 from autom.official import HolderAgentWorker, IdentityBridgeWorker, NullPlugger
 
 from azathoth.common import (
@@ -40,6 +41,7 @@ class InnerAPIConverter(GraphAgentWorker):
         return graph
 
 
+@autom_registry(is_internal=False)
 class AutomProjectAPIConverter(GraphAgentWorker):
     @classmethod
     def define_graph(cls) -> AutomGraph:

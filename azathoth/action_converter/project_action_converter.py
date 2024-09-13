@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from autom.engine import (
-    AutomSchema, Request, Response, SocketCall, SocketRequestBody,
+    AutomSchema, Request, Response, SocketCall, SocketRequestBody, autom_registry,
     PluggerWorker, AgentWorker, DispatchBridgeWorker, GraphAgentWorker, AutomGraph, Node, Link,
 )
 from autom.official import HolderAgentWorker, IdentityBridgeWorker, NullPlugger
@@ -42,6 +42,7 @@ class InnerActionConverter(GraphAgentWorker):
         return graph
 
 
+@autom_registry(is_internal=False)
 class AutomProjectActionConverter(GraphAgentWorker):
     @classmethod
     def define_graph(cls) -> AutomGraph:

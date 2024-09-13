@@ -1,43 +1,46 @@
+from autom.engine.integration_auth import IntegrationAuthRequirement
 from autom.logger import autom_logger
 from autom.utils import SingleLLMUsage
-from autom.official import BaseOpenAIWorker
-from autom.engine import AutomSchema, AgentWorker, Request, Response
+from autom.engine.integration_auth import google_forms_auth_meta
+from autom.official import BaseOpenAIWorker, IdentityBridgeWorker, HolderAgentWorker
+from autom.engine import GraphAgentWorker, AutomGraph, Node, Link, AutomSchema, AgentWorker, Request, Response, autom_registry
 
-from .schema import FormDesignRequirements, FormDesign
-from .prompt import form_builder_system_prompt, form_builder_user_input_prompt
+from .prompt import questionaire_desginer_system_prompt, questionaire_designer_user_input_prompt
+from .schema import QuestionaireDesignRequirement, QuestionaireDesign, GoogleFormsCreateFormResponse
 
 
-class GoogleFormBuilder(BaseOpenAIWorker, AgentWorker):
+@autom_registry(is_internal=False)
+class QuestionaireDesigner(BaseOpenAIWorker, AgentWorker):
     @classmethod
     def define_input_schema(cls) -> AutomSchema | None:
-        return FormDesignRequirements
+        return QuestionaireDesignRequirement
 
     @classmethod
     def define_output_schema(cls) -> AutomSchema | None:
-        return FormDesign
+        return QuestionaireDesign
 
     def invoke(self, req: Request) -> Response:
-        req_body: FormDesignRequirements = req.body
+        req_body: QuestionaireDesignRequirement = req.body
 
-        resp = Response[FormDesign].from_worker(self)
+        resp = Response[QuestionaireDesign].from_worker(self)
         chat_completion = self.openai_client.beta.chat.completions.parse(
                 model="gpt-4o-mini",
                 messages=[
-                    {"role": "system", "content": form_builder_system_prompt.format()},
-                    {"role": "user", "content": form_builder_user_input_prompt.format(
+                    {"role": "system", "content": questionaire_desginer_system_prompt.format()},
+                    {"role": "user", "content": questionaire_designer_user_input_prompt.format(
                         user_requirement=req_body.user_requirement,
                     )},
                 ],
-                response_format=FormDesign,
+                response_format=QuestionaireDesign,
             )
         resp.add_llm_usage(SingleLLMUsage.from_openai_chat_completion(chat_completion))
         resp.body = chat_completion.choices[0].message.parsed
         if resp.body is None:
             raise RuntimeError(f"Failed to parse the response from OpenAI chat completion: {chat_completion}")
         try:
-            resp_body: FormDesign = resp.body
+            resp_body: QuestionaireDesign = resp.body
             autom_logger.info(f"[GoogleFormBuilder] Form Design accomeplished! Pushing to Google Forms...")
-            form_create_response = resp_body.to_google_form(
+            form_create_response = resp_body.create_google_form(
                 access_token=self.integration_auth_manager.get(
                     integration_qualifier='google_forms',
                     secret_qualifier='api_key',
@@ -52,6 +55,62 @@ class GoogleFormBuilder(BaseOpenAIWorker, AgentWorker):
         return resp.success()
 
 
+@autom_registry(is_internal=False)
+class GoogleFormCreator(AgentWorker):
+    @classmethod
+    def define_input_schema(cls) -> AutomSchema | None:
+        return QuestionaireDesign
+
+    @classmethod
+    def define_output_schema(cls) -> AutomSchema | None:
+        return GoogleFormsCreateFormResponse
+
+    @classmethod
+    def define_integration_auth_requirement(cls) -> IntegrationAuthRequirement:
+        return IntegrationAuthRequirement().require(
+            google_forms_auth_meta, optional=False,
+        )
+
+    def invoke(self, req: Request) -> Response:
+        req_body: QuestionaireDesign = req.body
+        gforms_access_token = self.integration_auth_manager.get(
+            integration_qualifier='google_forms',
+            secret_qualifier='api_key',
+            required=True
+        )
+        google_forms_create_response = req_body.create_google_form(access_token=gforms_access_token)
+        return Response[GoogleFormsCreateFormResponse].from_worker(self).success(
+            body=google_forms_create_response
+        )
+
+
+@autom_registry(is_internal=False)
+class GoogleFormBuilder(GraphAgentWorker):
+    @classmethod
+    def define_graph(cls) -> AutomGraph:
+        graph = AutomGraph()
+
+        entry_node = Node.from_worker(HolderAgentWorker().with_schema(QuestionaireDesignRequirement))
+        entry_questionaire_designer_bridge = Link.from_worker(IdentityBridgeWorker())
+        questionaire_designer = Node.from_worker(QuestionaireDesigner())
+        questionaire_designer_google_form_creator_bridge = Link.from_worker(IdentityBridgeWorker())
+        google_form_creator = Node.from_worker(GoogleFormCreator())
+
+        graph.add_node(entry_node)
+        graph.add_node(questionaire_designer)
+        graph.add_node(google_form_creator)
+
+        graph.bridge(entry_node, questionaire_designer, entry_questionaire_designer_bridge)
+        graph.bridge(questionaire_designer, google_form_creator, questionaire_designer_google_form_creator_bridge)
+
+        graph.set_entry_node(entry_node)
+        graph.set_exit_node(google_form_creator)
+
+        return graph
+
+
 __all__ = [
+    'QuestionaireDesigner',
+    'GoogleFormCreator',
     'GoogleFormBuilder',
 ]
