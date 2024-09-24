@@ -14,6 +14,12 @@ autom_qualifiers = set([
     'ProjectGitStatus',
     'IntegrationAuthSecretMeta',
     'IntegrationAuthMeta',
+    'IntegrationAuthRequirement',
+    'IntegrationAuthRequirementAtom',
+    'IntegrationAuthRequirementItem',
+    'IntegrationAuthRequirementTypeLiteral',
+    'AutomSchemaMeta',
+    'AutomWorkerMeta',
 ])
 excluded_qualifiers = set([
     'MyBaseModel',
@@ -122,6 +128,7 @@ class SchemaImportConverter(AgentWorker):
                 # For non-relative imports, we only consider `autom` imports
                 if module_name.startswith("autom"):
                     remained_qualifiers = [q for q in qualifiers if q in autom_qualifiers]
+                    print(f"[SchemaImportConverter] module_name starts with autom: {module_name}, qualifiers: {qualifiers}, remained_qualifier: {remained_qualifiers}")
                     if len(remained_qualifiers) > 0:
                         typescript_module_name = autom_schemas_module
                         if autom_schemas_module not in filtered_import_froms:
