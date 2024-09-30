@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "azathoth"
-version = "0.1.0"
+version = "0.0.1"
 description = "The development kit that gives birth to most of the Autom itself."
 authors = ["autom_admin"]
 readme = "README.md"
@@ -21,6 +21,7 @@ name = "Azathoth"
 owner_qualifier = "autom_admin"
 owner_email = "admin@autom.com"
 description = "The development kit that gives birth to most of the Autom itself."
+version = "0.0.1"
 python_version = "3.11"
 python_version_spec = "^3.11"
 publicity = "public"
