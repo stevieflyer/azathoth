@@ -21,6 +21,7 @@ name = "Azathoth"
 owner_qualifier = "autom_admin"
 owner_email = "admin@autom.com"
 description = "The development kit that gives birth to most of the Autom itself."
+tags = ["Code Generation", "Development Kit", "Automation"]
 version = "0.0.1"
 python_version = "3.11"
 python_version_spec = "^3.11"
