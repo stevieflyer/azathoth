@@ -28,6 +28,10 @@ python_version_spec = "^3.11"
 publicity = "public"
 github_repo_url = "https://github.com/stevieflyer/azathoth.git"
 
+[tool.autom.dependencies]
+"autom-admin.autom" = "0.0.1"
+
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
