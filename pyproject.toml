@@ -18,7 +18,7 @@ pydub = "^0.25.1"
 [tool.autom]
 qualifier = "azathoth"
 name = "Azathoth"
-owner_qualifier = "autom_admin"
+owner_qualifier = "autom-admin"
 owner_email = "admin@autom.com"
 description = "The development kit that gives birth to most of the Autom itself."
 tags = ["Code Generation", "Development Kit", "Automation"]
@@ -30,7 +30,6 @@ github_repo_url = "https://github.com/stevieflyer/azathoth.git"
 
 [tool.autom.dependencies]
 "autom-admin.autom" = "0.0.1"
-
 
 [build-system]
 requires = ["poetry-core"]
