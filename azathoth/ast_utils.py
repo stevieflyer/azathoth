@@ -111,31 +111,92 @@ class ImportsInfo(BaseModel):
     import_froms: dict[str, list[str]] = Field(default_factory=dict, description="The dict of import modules from a module.")
 
 
-def extract_imports_info(imports_content: str) -> ImportsInfo:
-    """
-    Extract import statements from valid Python import lines and categorize
-    them into 'imports' and 'import_froms'.
-    """
-    imports_info = ImportsInfo()
+# def extract_imports_info(imports_content: str) -> ImportsInfo:
+#     """
+#     Extract import statements from valid Python import lines and categorize
+#     them into 'imports' and 'import_froms'.
+#     """
+#     imports_info = ImportsInfo()
     
-    # Split content by lines
+#     # Split content by lines
+#     lines = imports_content.splitlines()
+
+#     for line in lines:
+#         line = line.strip()
+
+#         # Skip empty lines and lines that don't start with 'import' or 'from'
+#         if not line or (not line.startswith('import') and not line.startswith('from')):
+#             continue
+
+#         # Handle 'from module import ...' statements
+#         if line.startswith('from'):
+#             match = re.match(r'^from\s+([\w\.]+)\s+import\s+(.+)', line)
+#             if match:
+#                 module, qualifiers = match.groups()
+#                 qualifiers_list = [q.strip() for q in qualifiers.split(',')]
+#                 imports_info.import_froms[module] = qualifiers_list
+        
+#         # Handle 'import module' statements
+#         elif line.startswith('import'):
+#             match = re.match(r'^import\s+([\w\.]+)', line)
+#             if match:
+#                 module = match.group(1)
+#                 imports_info.imports.append(module)
+
+#     return imports_info
+
+
+import re
+
+def extract_imports_info(imports_content: str) -> ImportsInfo:
+    imports_info = ImportsInfo()
     lines = imports_content.splitlines()
+    current_module = None
+    collecting_qualifiers = False
+    qualifiers_list = []
 
     for line in lines:
         line = line.strip()
 
-        # Skip empty lines and lines that don't start with 'import' or 'from'
-        if not line or (not line.startswith('import') and not line.startswith('from')):
+        # Skip empty lines
+        if not line:
             continue
 
-        # Handle 'from module import ...' statements
+        # Handle multi-line 'from module import (...)' blocks
+        if collecting_qualifiers:
+            if ')' in line:
+                qualifiers_list.extend([q.strip() for q in line.rstrip(')').split(',') if q.strip()])
+                if current_module in imports_info.import_froms:
+                    imports_info.import_froms[current_module].extend(qualifiers_list)
+                else:
+                    imports_info.import_froms[current_module] = qualifiers_list
+                collecting_qualifiers = False
+                current_module = None
+                qualifiers_list = []  # Reset qualifiers list after processing
+            else:
+                qualifiers_list.extend([q.strip() for q in line.split(',') if q.strip()])
+            continue
+
+        # Handle 'from module import (...)' starting block
+        if line.startswith('from') and '(' in line and ')' not in line:
+            match = re.match(r'^from\s+([\w\.]+)\s+import\s*\(', line)
+            if match:
+                current_module = match.group(1)
+                collecting_qualifiers = True
+                qualifiers_list = []  # Reset for new module
+            continue
+
+        # Handle 'from module import ...' one-liners
         if line.startswith('from'):
             match = re.match(r'^from\s+([\w\.]+)\s+import\s+(.+)', line)
             if match:
                 module, qualifiers = match.groups()
-                qualifiers_list = [q.strip() for q in qualifiers.split(',')]
-                imports_info.import_froms[module] = qualifiers_list
-        
+                qualifiers_list = [q.strip() for q in qualifiers.split(',') if q.strip()]
+                if module not in imports_info.import_froms:
+                    imports_info.import_froms[module] = []
+                imports_info.import_froms[module].extend(qualifiers_list)
+            continue
+
         # Handle 'import module' statements
         elif line.startswith('import'):
             match = re.match(r'^import\s+([\w\.]+)', line)
@@ -144,7 +205,6 @@ def extract_imports_info(imports_content: str) -> ImportsInfo:
                 imports_info.imports.append(module)
 
     return imports_info
-
 
 def find_class_source_in_file(file_path: PathLike, class_names: list[str]) -> list[str]:
     """Find class definitions in a Python file.

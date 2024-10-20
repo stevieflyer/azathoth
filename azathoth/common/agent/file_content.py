@@ -160,10 +160,10 @@ class FileContentAggregator(AggregatorWorker):
                 filepath=self._output_as_dict['filepath'],
                 content=self._output_as_dict['content'],
             )
-        # Merge indexed segments into content with separator '\n\n'
-        content = '\n\n'.join([self._output_as_dict['indexed_segments'][i] for i in sorted(self._output_as_dict['indexed_segments'])])
-        
-        autom_logger.info(f"FileContentAggregator: Merged indexed segments into content, filepath={self._output_as_dict['filepath']}, segments={self._output_as_dict['indexed_segments']}")
+        # Filter out empty segments and then join non-empty ones with '\n\n'
+        non_empty_segments = [seg for i, seg in sorted(self._output_as_dict['indexed_segments'].items()) if seg.strip()]
+        content = '\n\n'.join(non_empty_segments)
+
         return FileContent(
             filepath=self._output_as_dict['filepath'],
             content=content,

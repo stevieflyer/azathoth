@@ -6,32 +6,10 @@ from azathoth.ast_utils import extract_imports_info
 from .schema import SchemaImportConvertParams, ConvertedImportsContent
 
 
-autom_qualifiers = set([
-    'OAuthProviderEnum',
-    'SecretRetrievalBy',
-    'WorkerFunctionType',
-    'WorkerTopologyType',
-    'UnitTopologyInfo',
-    'GraphTopologyInfo',
-    'GithubOAuthMeta',
-    'GoogleOAuthMeta',
-    'NotionOAuthMeta',
-    'IntegrationAuthSecretMeta',
-    'IntegrationAuthMeta',
-    'IntegrationAuthRequirementTypeLiteral',
-    'IntegrationAuthRequirementItem',
-    'IntegrationAuthRequirementAtom',
-    'IntegrationAuthRequirement',
-    'AutomRegistryMeta',
-    'AutomSchemaMeta',
-    'AutomWorkerMeta',
-    'ProjectPublicity',
-    'ProjectRunnableStatus',
-    'ProjectGitStatus',
-])
 excluded_qualifiers = set([
     'MyBaseModel',
 ])
+ts_autom_schemas_module = '@/types/autom_schemas'
 
 
 class SchemaImportConvertParamsAggregator(AggregatorWorker):
@@ -87,9 +65,9 @@ class SchemaImportConvertParamsAggregator(AggregatorWorker):
 
 class SchemaImportConverter(AgentWorker):
     """Schema Import Converter for Autom Project
-    
+
     我们要把 Autom Backend 中的 Python pydantic schema 转换为 Autom Frontend 中的 TypeScript Type。
-    
+
     对于 imports, 我们需要
 
     - 把 src_root_path / 'app/schemas' 中的项目内 imports 全部转换为 dst_root_path / 'types' 中的项目内 imports。
@@ -109,40 +87,31 @@ class SchemaImportConverter(AgentWorker):
         import_froms: dict[str, list[str]] = extract_imports_info(req_body.imports_content).import_froms
         filtered_import_froms: dict[str, list[str]] = {}
 
-        dst_types_dir = req_body.dst_root_path / 'types'
-        dst_filepath_depth = len(req_body.dst_filepath.relative_to(dst_types_dir).parts)
-
-        if dst_filepath_depth <= 0:
-            raise ValueError("dst_filepath should be in dst_root_path / 'types'")
-        elif dst_filepath_depth == 1:
-            autom_schemas_module = './autom_schemas'
-        else:
-            autom_schemas_module = ''.join(['../' for _ in range(dst_filepath_depth - 1)]) + 'autom_schemas'
-
         for module_name, qualifiers in import_froms.items():
-            if module_name.startswith('.'):
-                # For relative imports, we need to import all qualifier that is capitalized(because they are classes)
-                remained_qualifiers = [qualifier for qualifier in qualifiers if qualifier[0].isupper() and qualifier not in excluded_qualifiers]
+            # 1. Handle `app.common` imports
+            if module_name == 'app.common':
+                remained_qualifiers = [q for q in qualifiers if q[0].isupper() and q not in excluded_qualifiers]
                 if len(remained_qualifiers) > 0:
-                    if '..' in module_name:
-                        typescript_module_name = module_name.replace('..', '../')
-                    else:
-                        typescript_module_name = module_name.replace('.', './')
-                    
+                    typescript_module_name = '@/types/common'
                     if typescript_module_name not in filtered_import_froms:
                         filtered_import_froms[typescript_module_name] = []
                     filtered_import_froms[typescript_module_name].extend(remained_qualifiers)
-            else:
-                # For non-relative imports, we only consider `autom` imports
-                if module_name.startswith("autom"):
-                    remained_qualifiers = [q for q in qualifiers if q in autom_qualifiers]
-                    print(f"[SchemaImportConverter] module_name starts with autom: {module_name}, qualifiers: {qualifiers}, remained_qualifier: {remained_qualifiers}")
-                    if len(remained_qualifiers) > 0:
-                        typescript_module_name = autom_schemas_module
-                        if autom_schemas_module not in filtered_import_froms:
-                            filtered_import_froms[typescript_module_name] = []
-                        filtered_import_froms[typescript_module_name].extend(remained_qualifiers)
-
+            # 2. Handle `autom` imports
+            elif module_name.startswith('autom'):
+                remained_qualifiers = [q for q in qualifiers if q[0].isupper() and q not in excluded_qualifiers]
+                if len(remained_qualifiers) > 0:
+                    typescript_module_name = '@/types/autom_schemas'
+                    if ts_autom_schemas_module not in filtered_import_froms:
+                        filtered_import_froms[typescript_module_name] = []
+                    filtered_import_froms[typescript_module_name].extend(remained_qualifiers)
+            # 3. Handle `app.schemas.entities` imports:
+            elif module_name == 'app.schemas.entities':
+                remained_qualifiers = [qualifier for qualifier in qualifiers if qualifier[0].isupper() and qualifier not in excluded_qualifiers]
+                if len(remained_qualifiers) > 0:
+                    typescript_module_name = '@/types/entities'
+                    if typescript_module_name not in filtered_import_froms:
+                        filtered_import_froms[typescript_module_name] = []
+                    filtered_import_froms[typescript_module_name].extend(remained_qualifiers)
         converted_import_lines = [
             f'import {{ {", ".join(qualifiers)} }} from "{module}";'
             for module, qualifiers in filtered_import_froms.items()

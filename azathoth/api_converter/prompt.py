@@ -1,112 +1,72 @@
 function_api_converter_system_prompt = '''
-请你协助我将我把我的后端项目（基于 Python FastAPI) 的 api 函数转换为前端项目（基于 TypeScript React) 的 api 函数。
+请你帮我把 Python FastAPI 后端项目中的一个 api 函数转换为前端 TypeScript React 项目的一个 api 函数, 以便我在前端项目中使用。
 
-我将先给你一些示例:
+你总是会获得以下信息:
+- api_function_source: 一个 Python FastAPI 后端项目中的一个 api 函数的函数头部
+- router_name: 这个 api 函数所在的 router 的名字
 
-【例子 1】
-【【输入】】
-<src_filepath>
-/home/john/workspace/future-school/app/api/v1/endpoints/classes.py
+我给你一个例子:
+# 例子 1
+
+## 输入
 <api_function_source>
-@router.get(
-    "/{{class_id}}/current-representitives/{{representitive_id}}",
-    response_model=ClassRepresentitiveDetail,
-    tags=["class-representitive"],
-)
-def get_class_detail_representitive_by_id(
-    representitive_id: int,
-    body_data: PaginationQueryReqBody,
+@router.post("/login/cred", response_model=LoginRespBody)
+def cred_login(
+    body_data: CredLoginReqBody,
     db: Session = Depends(get_db),
-    current_user: UserSafe = Depends(get_current_user),
-):
-    pass
-<dst_filepath>
-/home/john/workspace/future-school/lib/backend-api/classes/get_class_detail_representitive_by_id.ts
-【【输出】】
+) -> LoginRespBody:
+<router_name>
+users
+## 输出
+"use server";
+
 import {{ cache }} from "react";
 
-import {{ UnexpectedError }} from "@/errors";
 import {{ BACKEND_API_URL }} from "@/config";
-import {{ ClassRepresentitiveDetail, PaginationQueryReqBody }} from "@/types";
+import {{ CredLoginReqBody, LoginRespBody }} from "@/types";
 
-/**
- * Get class representative detail by ID
- *
- * @param classId - The ID of the class.
- * @param representitiveId - The ID of the class representative.
- * @param accessToken - The access token for authentication.
- * @throws {{UnexpectedError}} If an unexpected error occurs.
- *
- * @returns {{Promise<ClassRepresentitiveDetail>}} The representative detail data for the class.
- */
-export const getClassDetailRepresentitiveById = cache(
+export const credLogin = cache(
   async ({{
-    classId,
-    representitiveId,
     bodyData,
-    accessToken,
   }}: {{
-    classId: number;
-    representitiveId: number;
-    bodyData: PaginationQueryReqBody;
-    accessToken: string;
-  }}): Promise<ClassRepresentitiveDetail> => {{
-    const response = await fetch(
-      `${{BACKEND_API_URL}}/${{classId}}/current-representitives/${{representitiveId}}`,
-      {{
-        method: "GET",
-        headers: {{
-          Authorization: `Bearer ${{accessToken}}`,
-        }},
-        body: JSON.stringify(bodyData),
-      }}
-    );
+    bodyData: CredLoginReqBody;
+  }}): Promise<LoginRespBody> => {{
+    const response = await fetch(`${{BACKEND_API_URL}}/users/login/cred`, {{
+      method: "POST",
+      headers: {{
+        "Content-Type": "application/json",
+      }},
+      body: JSON.stringify(bodyData),
+    }});
 
     if (!response.ok) {{
-      throw new UnexpectedError(
-        `An unexpected error occurred. Error: ${{response.statusText}}`
-      );
+      const errorData = await response.json();
+      throw new Error(errorData?.detail);
     }}
 
     return await response.json();
   }}
 );
-【例子 1 结束】
+# 例子 1 结束
 
-下面，轮到你了！请注意, 跟例子中唯一不同的一点要求是：我需要你以 json 的形式返回， 格式类似: {{ "frontend_code": "..." }}。
-
-我再次重申你的工作职责：请你协助我将我把我的后端项目（基于 Python FastAPI) 的 api 函数转换为前端项目（基于 TypeScript React) 的 api 函数。
-
-你应该从例子中已经知道了一些我要你完成这项工作的特别注意事项：
-- 从输入信息中你可以看到, 你在输入中会知道: api_function_source, src_filepath, dst_filepath.
-  - 你可以从 api_function_source 中得知: (1) $api_suffix_route (2) $api_function_name E.g.在例子 1 中, 从函数的 decorator 中你可以看到 $api_suffix_route 为 "/{{class_id}}/current-representitives/{{representitive_id}}", 从函数名中可以看到 $api_function_name 为 "get_my_worker_by_id"
-  - 你可以从 dst_file_name 中得知: $router_name, 和 $api_endpoint_name, 因为 dst_file_name 的路径规范总是: `lib/backend-api/{{router_tag}}/{{api_function_name}}.ts`, 而 $router_name=$router_tag.replace("_", "-"). 例如: 如果 dst_file_name 为 `lib/backend-api/group_ticket/delete_ticket.ts`, 那么 $router_name 为 "group-ticket", $api_endpoint_name 为 "delete_ticket"
-
-- 你输出的代码中要访问的 api url 永远不应该含有下划线 `_`, 应当使用 `-` 代替 `_`, 且与这个模式相一致: `${{BACKEND_API_URL}}/{{router_name}}/${{api_suffix_route}}`
-
-- 如果 api_function_source 中含有 current_user: UserSafe = Depends(get_current_user), 你应当在输出的代码中添加一个 accessToken 参数，用于传递用户的 access token, 否则就不需要
-
-- 对于 body_data, 如果后端代码中有 body_data, 那么前端代码中也应当有 bodyData, 并且类型直接指定为与后端同名的类即可, 你可以认为这个类可以从 @/types 中 import 到
-
-- 如果后端代码中没有传递 body_data, 那么前端代码中也一定不要有 bodyData 参数
-
-- 在编写 ts 代码时, 对于参数, 请始终使用 destructuring 的方式。哪怕只有一个参数, 也应当坚持使用 destructuring 的方式。例如: {{ classId }}: {{ classId: number }}。
-
+除了例子, 我还有一些特别注意事项, 请你务必注意:
+- 前端代码要请求的 url 始终是: `${{BACKEND_API_URL}}/{{router_name}}/${{api_suffix_route}}`, 这里的 api_suffix_route 是你在后端代码中的 api 函数的路由后缀
+- 如果 api_function_source 中含有参数 current_user: UserSafe = Depends(get_current_user), 你应当在输出的代码中添加一个 accessToken 参数，并且在 fetch 请求的 headers 中添加一个 Authorization 字段，值为 `Bearer ${{accessToken}}`
+- 如果 api_function_source 中不含有 current_user 参数, 那么意味着这个接口不需要登录, 你的输出代码就不需要添加 accessToken 参数, 也不需要在 fetch 请求的 headers 中添加 Authorization 字段
+- 前端代码的变量名应当尽量与后端代码一致, 但是请将所有的变量名都改为 camelCase 的形式
+- 如果后端代码中没有参数 body_data, 那么前端代码中也一定不要有 bodyData 参数, 也不要在 fetch 请求加入 body 字段
+- 在前端代码中请始终使用 destructuring 的方式来接收参数, 即使只有一个参数
 - 但是如果没有任何参数(比如只需要传递 accessToken), 那么就不需要使用 destructuring 的方式, 因为一个全空的对象解构是令人疑惑且不符合语法的。
-
-- 对于所有需要用到的 schema, 你都认为可以从 "@/types" 中 import
+- 对于所有遇到的 schema, 你都可以放心地从 "@/types" 中 import, 这里一定会有你需要的类型定义, 名称与后端完全相同
 '''.strip()
 
 function_api_converter_user_input_prompt = """
 【输入】
-<src_filepath>
-{src_filepath}
-
 <api_function_source>
 {api_function_source}
 
-<dst_filepath>
-{dst_filepath}
+<router_name>
+{router_name}
 
 【输出】
 """.strip()

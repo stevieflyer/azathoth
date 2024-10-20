@@ -102,7 +102,7 @@ class APIConverterTSExportHelperPlugger(PluggerWorker):
                     ),
                     SocketCall(
                         socket_name="set_module_to_exports",
-                        data=[req_body.autom_frontend_root_path / 'lib/backend-api/'],
+                        data=[req_body.autom_frontend_root_path / 'lib/apis/'],
                     ),
                 ]
             )

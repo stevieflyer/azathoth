@@ -1,3 +1,4 @@
+import inflection
 from autom.engine import (
     AutomSchema, Request, Response,
     AgentWorker, DispatchBridgeWorker, GraphAgentWorker, AutomGraph, Node, Link, 
@@ -18,7 +19,7 @@ class FileAPIConvertPlanner(AgentWorker):
     @classmethod
     def define_output_schema(cls) -> AutomSchema | None:
         return FileAPIConvertPlan
-    
+
     def invoke(self, req: Request) -> Response:
         req_body: FileAPIConverterInput = req.body
         python_parts = extract_python_parts(file_path=req_body.src_file_fullpath, project_root=req_body.autom_backend_root_path)
@@ -80,7 +81,7 @@ class PlannerFunctionAPIConverterDispatchBridgeWorker(DispatchBridgeWorker):
                 body=FunctionAPIConverterInput(
                     api_function_source=function_source,
                     src_file_fullpath=req_body.src_file_fullpath,
-                    dst_file_fullpath=req_body.autom_frontend_root_path / f"lib/backend-api/{router_name}/{function_name}.ts",
+                    dst_file_fullpath=req_body.autom_frontend_root_path / f"lib/apis/{router_name}/{inflection.camelize(function_name, uppercase_first_letter=False)}.ts",
                     autom_backend_root_path=req_body.autom_backend_root_path,
                     autom_frontend_root_path=req_body.autom_frontend_root_path,
                 )

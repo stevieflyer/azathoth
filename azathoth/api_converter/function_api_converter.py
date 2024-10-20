@@ -23,6 +23,8 @@ class FunctionAPIConverter(BaseOpenAIWorker, AgentWorker):
 
         req_body: FunctionAPIConverterInput = req.body
         api_function_source = req_body.api_function_source
+        src_relpath = req_body.src_file_fullpath.relative_to(req_body.autom_backend_root_path)
+        router_name = str(src_relpath).lstrip("app/api/v1/endpoints/").rstrip(".py")
 
         resp = Response[FileContent].from_worker(self)
         chat_completion = self.openai_client.beta.chat.completions.parse(
@@ -30,9 +32,8 @@ class FunctionAPIConverter(BaseOpenAIWorker, AgentWorker):
                 messages=[
                     {"role": "system", "content": function_api_converter_system_prompt.format()},
                     {"role": "user", "content": function_api_converter_user_input_prompt.format(
-                        src_filepath=req_body.src_file_fullpath.as_posix(),
                         api_function_source=api_function_source,
-                        dst_filepath=req_body.dst_file_fullpath.as_posix(),
+                        router_name=router_name,
                     )},
                 ],
                 response_format=Output,
