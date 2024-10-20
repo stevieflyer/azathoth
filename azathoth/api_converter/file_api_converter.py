@@ -79,6 +79,7 @@ class PlannerFunctionAPIConverterDispatchBridgeWorker(DispatchBridgeWorker):
         for function_name, function_source in req_body.function_name_source_dict.items():
             batch_responses[len(batch_responses)] = Response[FunctionAPIConverterInput].from_worker(self).success(
                 body=FunctionAPIConverterInput(
+                    api_function_name=function_name,
                     api_function_source=function_source,
                     src_file_fullpath=req_body.src_file_fullpath,
                     dst_file_fullpath=req_body.autom_frontend_root_path / f"lib/apis/{router_name}/{inflection.camelize(function_name, uppercase_first_letter=False)}.ts",
